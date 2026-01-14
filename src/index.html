@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardioWatts</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-dark: #050505;
+            --bg-gradient: radial-gradient(circle at 50% 100%, #1a1f35 0%, #050505 100%);
+
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+
+            --accent: #328AFF;
+            --accent-glow: 0 0 30px rgba(50, 138, 255, 0.2);
+
+            --success: #00E676;
+            --danger: #FF1744;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 24px;
+            width: 90%;
+            max-width: 600px;
+            min-height: 80vh;
+            /* Scalable */
+        }
+
+        /* Glass Cards */
+        .glass-panel {
+            background: var(--card-glass);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header / Timer */
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            /* Centered Timer */
+            align-items: center;
+            padding: 24px 32px;
+        }
+
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Main HR Card */
+        .hr-card {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hr-value {
+            font-size: 10rem;
+            font-weight: 800;
+            line-height: 0.9;
+            letter-spacing: -6px;
+        }
+
+        .hr-label {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-top: 16px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Secondary Metrics */
+        .metric-card {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Controls */
+        .controls {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #333;
+            color: #888;
+            box-shadow: none;
+        }
+
+        /* Dynamic Connection Buttons */
+        button.connect-btn {
+            background: #444;
+            color: #fff;
+            min-width: 80px;
+            /* Reduced from 160px */
+            flex: 0 0 auto;
+            /* Don't grow */
+            padding: 12px 16px;
+            /* Slightly tighter padding */
+            font-size: 0.8rem;
+            /* Slightly smaller text */
+        }
+
+        /* CONNECTED STATE */
+        button.connect-btn.connected {
+            background: var(--accent) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(50, 138, 255, 0.4);
+        }
+
+        button.connect-btn.connected:hover {
+            /* Handled by brightness filter */
+        }
+
+        /* FAILED STATE */
+        button.connect-btn.failed {
+            background: var(--danger) !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-4px);
+            }
+
+            75% {
+                transform: translateX(4px);
+            }
+        }
+
+        /* Main Action Button (Start Ride) - Zwift Orange */
+        button.primary {
+            background: #FC6719;
+            /* Zwift Orange */
+            color: white;
+            font-size: 1.1rem;
+            padding: 16px 32px;
+        }
+
+        button.primary:disabled {
+            background: #333;
+        }
+
+        /* Inputs */
+        input[type="number"] {
+            font-family: 'Outfit', sans-serif;
+            background: rgba(0, 0, 0, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            border-radius: 4px;
+            /* Matches buttons */
+            font-weight: 600;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        /* Zone States */
+        @keyframes pulse-blue {
+            0% {
+                text-shadow: 0 0 20px rgba(50, 138, 255, 0.1);
+            }
+
+            50% {
+                text-shadow: 0 0 40px rgba(50, 138, 255, 0.6);
+            }
+
+            100% {
+                text-shadow: 0 0 20px rgba(50, 138, 255, 0.1);
+            }
+        }
+
+        @keyframes pulse-green {
+            0% {
+                text-shadow: 0 0 20px rgba(0, 230, 118, 0.1);
+            }
+
+            50% {
+                text-shadow: 0 0 50px rgba(0, 230, 118, 0.6);
+            }
+
+            100% {
+                text-shadow: 0 0 20px rgba(0, 230, 118, 0.1);
+            }
+        }
+
+        .zone-low {
+            color: var(--accent);
+            animation: pulse-blue 3s infinite;
+        }
+
+        .zone-target {
+            color: var(--success);
+            animation: pulse-green 2s infinite ease-in-out;
+            transform: scale(1.05);
+        }
+
+        .zone-high {
+            color: var(--danger);
+            text-shadow: 0 0 30px rgba(255, 23, 68, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Top Bar -->
+        <div class="header glass-panel"
+            style="background: rgba(0,0,0,0.4); border:none; display: flex; align-items: center; justify-content: center; position: relative;">
+            <!-- Darker header -->
+            <div class="timer-display" id="timer">00:00</div>
+
+            <!-- Config Button (Discreet, in header) -->
+            <button id="pipBtn"
+                style="position: absolute; left: 10px; width: 32px; height: 32px; border-radius: 50%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                    <line x1="7" y1="2" x2="7" y2="22" />
+                    <line x1="17" y1="2" x2="17" y2="22" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <line x1="2" y1="7" x2="7" y2="7" />
+                    <line x1="2" y1="17" x2="7" y2="17" />
+                    <line x1="17" y1="7" x2="22" y2="7" />
+                    <line x1="17" y1="17" x2="22" y2="17" />
+                </svg>
+                <!-- Simple Window Icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="position:absolute; background:#000;">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <rect x="11" y="11" width="8" height="8"></rect>
+                </svg>
+            </button>
+
+            <!-- chartToggleBtn removed -->
+        </div>
+
+        <!-- Main HR Card (Compact Inline) -->
+        <div class="hr-card glass-panel" id="hrCard"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 10px;">
+
+            <!-- HR Hero (Top) -->
+            <div style="text-align: center; margin-bottom: 5px;">
+                <div class="hr-value" id="hrValue" style="line-height: 0.9;">--</div>
+                <div class="hr-label" style="margin-top: -5px; font-size: 1rem;">BPM</div>
+            </div>
+
+
+
+            <!-- Inline Controls Row (Compass Layout) -->
+            <div style="display: flex; align-items: center; justify-content: space-evenly; width: 100%; gap: 10px;">
+
+                <!-- Power (Left) -->
+                <div style="text-align: center; min-width: 60px;">
+                    <div id="powerValue" style="font-size: 1.8rem; line-height: 1; color: #fff;">--</div>
+                    <div style="font-size: 0.7rem; color: #888; text-transform: uppercase;">WATTS</div>
+                </div>
+
+                <!-- Target Controls (Center) -->
+                <div class="hr-target" style="display: flex; align-items: center; gap: 10px;">
+                    <button id="targetDec"
+                        style="width: 44px; height: 44px; padding: 0; font-size: 1.4rem; border-radius: 50%; min-width: 44px; background: rgba(255,255,255,0.1);">-</button>
+
+                    <div style="text-align: center;">
+                        <div id="targetHrDisplay"
+                            style="background: transparent; color: #fff; font-size: 2rem; width: 60px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Outfit', sans-serif;">
+                            127
+                        </div>
+                        <div
+                            style="font-size: 0.6rem; color: var(--text-muted); margin-top: -4px; letter-spacing: 1px; font-weight: 600;">
+                            TARGET</div>
+                    </div>
+
+                    <button id="targetInc"
+                        style="width: 44px; height: 44px; padding: 0; font-size: 1.4rem; border-radius: 50%; min-width: 44px; background: rgba(255,255,255,0.1);">+</button>
+                </div>
+
+                <!-- Cadence (Right) -->
+                <div style="text-align: center; min-width: 60px;">
+                    <div id="cadenceValue" style="font-size: 1.8rem; line-height: 1; color: #fff;">--</div>
+                    <div style="font-size: 0.7rem; color: #888; text-transform: uppercase;">RPM</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Real-Time Chart (Grid Flow) -->
+        <!-- Moved here from bottom overlay -->
+        <div id="chartContainer" class="glass-panel"
+            style="grid-column: 1 / -1; height: 250px; position: relative; width: 100%; overflow: hidden; padding: 0;">
+            <canvas id="workoutChart"></canvas>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls" style="display: flex; flex-wrap: nowrap; gap: 8px; width: 100%;">
+            <button id="connectTrainerBtn" class="connect-btn">TRAINER</button>
+            <button id="connectHrBtn" class="connect-btn">HRM</button>
+
+            <!-- Algorithm Switcher (Discreet) -->
+            <select id="algoSelect" style="
+                background: rgba(0,0,0,0.3); 
+                border: 1px solid rgba(255,255,255,0.1); 
+                color: #888; 
+                padding: 0 10px; 
+                border-radius: 8px; 
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.75rem;
+                outline: none;
+                height: 44px;
+                flex: 0 0 auto;
+            ">
+                <option value="softGlide" selected>SoftGlide</option>
+                <option value="projected">Agility V2 (Projected)</option>
+            </select>
+            <button id="startBtn" class="primary" disabled
+                style="flex: 0 0 auto; padding: 0 24px; min-width: 100px;">START</button>
+        </div>
+
+    </div>
+
+    <!-- Calibration Modal -->
+    <div id="calibrationModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="glass-panel" style="width: 90%; max-width: 320px; padding: 24px; text-align: center;">
+            <h3 style="margin: 0 0 20px 0; font-weight: 500;">Calibrate Model</h3>
+            <p style="color: #aaa; font-size: 0.8rem; margin-bottom: 20px;">Teach the algorithm your current fitness
+                level.</p>
+
+            <div style="margin-bottom: 16px; text-align: left;">
+                <label style="display: block; color: #888; font-size: 0.75rem; margin-bottom: 4px;">HEART RATE
+                    (BPM)</label>
+                <input type="number" id="calibHrInput" value="130"
+                    style="width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 1.1rem; text-align: center;">
+            </div>
+
+            <div style="margin-bottom: 24px; text-align: left;">
+                <label style="display: block; color: #888; font-size: 0.75rem; margin-bottom: 4px;">POWER
+                    (WATTS)</label>
+                <input type="number" id="calibPowerInput" value="150"
+                    style="width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 1.1rem; text-align: center;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="closeCalibBtn"
+                    style="flex: 1; padding: 12px; background: #333; color: #ccc; border: none; border-radius: 8px;">CANCEL</button>
+                <button id="saveCalibBtn" class="primary"
+                    style="flex: 1; padding: 12px; border-radius: 8px;">TEACH</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

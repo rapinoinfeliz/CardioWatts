@@ -1,0 +1,20 @@
+{
+  "name": "cardio-watts",
+  "version": "1.0.0",
+  "description": "Focused Zone 2 Training App",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "parcel": "^2.12.0"
+  },
+  "devDependencies": {
+    "process": "^0.11.10"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
