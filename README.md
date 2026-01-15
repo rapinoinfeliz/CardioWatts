@@ -23,6 +23,21 @@ The Bio-MPC series utilizes a physiological state-space model to simulate athlet
 *   **Bio-MPC V5 (Stochastic Oracle)**: The current production standard for robust physiological control.
     *   **Monte Carlo Simulation**: Instead of a single deterministic simulation, V5 executes 20 parallel simulations per step, each injected with randomized physiological noise (gain and tau jitter).
     *   **p95 Safety Margin**: The controller selects a power target that is mathematically safe across 95% of predicted probable futures, ensuring robust overshoot protection in high-variability environments.
+*   **Bio-MPC V6 (Adaptive Oracle)**: The pinnacle of the series, introducing self-learning capabilities.
+    *   **Recursive Least Squares (RLS)**: Real-time parameter identification adapts the internal model to the athlete's specific gain and kinetics during the workout.
+    *   **Smith Predictor**: Explicitly compensates for the ~8s delay inherent in heart rate sensors, eliminating oscillation potential.
+    *   **Gradient Descent**: Replaces discrete hill-climbing with a momentum-based gradient optimizer for fluid power adjustments.
+
+### Comparative Analysis
+
+| Feature | SoftGlide (V1) | Agility (V2) | Bio-MPC V3 | Bio-MPC V4 | Bio-MPC V5 | Bio-MPC V6 |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Methodology** | Reactive PI | Linear Projection | Deterministic MPC | MPC + Kalman | MPC + Monte Carlo | MPC + RLS + Adaptive |
+| **Prediction Horizon** | 0s (Real-time) | 15s (Linear) | 45s (Fixed) | 45s (Fixed) | 45s (Fixed) | **30s - 75s (Adaptive)** |
+| **Physiology Model** | None | None | Fixed 2nd Order | Asymmetric + Hidden | Randomized (Noise) | **Self-Learning (RLS)** |
+| **Latency Handling** | None | Preemptive | Built-in Delay | Kalman Filter | Robustness | **Smith Predictor** |
+| **Safety Logic** | Reactive | Braking | Zero Overshoot | Hysteresis | p95 Stochastic | **Soft/Hard Ceilings** |
+| **Best For** | Recovery / Z1-Z2 | Steady State | Basic Intervals | Precision | Noisy Sensors | **All Scenarios** |
 
 ## Simulation Engine
 
