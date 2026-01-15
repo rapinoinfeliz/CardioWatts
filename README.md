@@ -27,17 +27,21 @@ The Bio-MPC series utilizes a physiological state-space model to simulate athlet
     *   **Recursive Least Squares (RLS)**: Real-time parameter identification adapts the internal model to the athlete's specific gain and kinetics during the workout.
     *   **Smith Predictor**: Explicitly compensates for the ~8s delay inherent in heart rate sensors, eliminating oscillation potential.
     *   **Gradient Descent**: Replaces discrete hill-climbing with a momentum-based gradient optimizer for fluid power adjustments.
+*   **Bio-MPC V7.4 (Adaptive Flux)**: The refinement of V6, focusing on physiological asymmetry.
+    *   **Asymmetric Adaptation**: Separates learning rates for heart rate rise (sympathetic) and fall (parasympathetic), mirroring human physiology.
+    *   **Gain Scheduling**: Dynamically adjusts the optimization aggression based on error magnitude—gentle when close, rapid when far.
+    *   **Delay-Aware Matching**: Parameters are updated by comparing reality against the *delayed* model output, ensuring strict causal correctness.
 
 ### Comparative Analysis
 
-| Feature | SoftGlide (V1) | Agility (V2) | Bio-MPC V3 | Bio-MPC V4 | Bio-MPC V5 | Bio-MPC V6 |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Methodology** | Reactive PI | Linear Projection | Deterministic MPC | MPC + Kalman | MPC + Monte Carlo | MPC + RLS + Adaptive |
-| **Prediction Horizon** | 0s (Real-time) | 15s (Linear) | 45s (Fixed) | 45s (Fixed) | 45s (Fixed) | **30s - 75s (Adaptive)** |
-| **Physiology Model** | None | None | Fixed 2nd Order | Asymmetric + Hidden | Randomized (Noise) | **Self-Learning (RLS)** |
-| **Latency Handling** | None | Preemptive | Built-in Delay | Kalman Filter | Robustness | **Smith Predictor** |
-| **Safety Logic** | Reactive | Braking | Zero Overshoot | Hysteresis | p95 Stochastic | **Soft/Hard Ceilings** |
-| **Best For** | Recovery / Z1-Z2 | Steady State | Basic Intervals | Precision | Noisy Sensors | **All Scenarios** |
+| Feature | SoftGlide (V1) | Agility (V2) | Bio-MPC V3 | Bio-MPC V4 | Bio-MPC V5 | Bio-MPC V6 | Bio-MPC V7.4 |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Methodology** | Reactive PI | Linear Projection | Deterministic MPC | MPC + Kalman | MPC + Monte Carlo | MPC + RLS + Smith | **MPC + Asymmetric RLS** |
+| **Prediction Horizon** | 0s (Real-time) | 15s (Linear) | 45s (Fixed) | 45s (Fixed) | 45s (Fixed) | 30s - 75s (Adaptive) | **45s - 90s (Flux)** |
+| **Physiology Model** | None | None | Fixed 2nd Order | Asymmetric + Hidden | Randomized (Noise) | Self-Learning (RLS) | **Dual-Tau Adaptation** |
+| **Latency Handling** | None | Preemptive | Built-in Delay | Kalman Filter | Robustness | Smith Predictor | **Delay-Aware Match** |
+| **Safety Logic** | Reactive | Braking | Zero Overshoot | Hysteresis | p95 Stochastic | Soft/Hard Ceilings | **Gain Scheduling** |
+| **Best For** | Recovery / Z1-Z2 | Steady State | Basic Intervals | Precision | Noisy Sensors | All Scenarios | **Pro/Elite Intervals** |
 
 ## Simulation Engine
 

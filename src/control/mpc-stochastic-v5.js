@@ -7,7 +7,7 @@
  * 3. Chooses power that is safe across the majority of futures (95th percentile safety).
  */
 
-export class BioMPCV5Controller {
+export class MPCStochasticV5 {
     constructor(config = {}) {
         this.outputMin = config.outputMin || 50;
         this.outputMax = config.outputMax || 400;

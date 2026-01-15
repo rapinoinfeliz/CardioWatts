@@ -9,7 +9,7 @@
  * 5. Ornstein-Uhlenbeck Noise for realistic simulation.
  */
 
-export class BioMPCV6Controller {
+export class MPCAdaptiveV6 {
     constructor(config = {}) {
         this.outputMin = config.outputMin || 50;
         this.outputMax = config.outputMax || 400;

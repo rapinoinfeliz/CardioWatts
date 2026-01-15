@@ -1,13 +1,13 @@
 // Controllers
 import Connectable from './ble/connectable.js';
 import MockConnectable from './ble/mock-connectable.js';
-// import { PhysioController } from './control/physio-controller.js'; // Deprecated
-import { SoftGlideController } from './control/soft-glide-controller.js';
-import { ProjectedController } from './control/projected-controller.js';
-import { BioMPCController } from './control/bio-mpc-controller.js';
-import { BioMPCV4Controller } from './control/bio-mpc-v4-controller.js';
-import { BioMPCV5Controller } from './control/bio-mpc-v5-controller.js';
-import { BioMPCV6Controller } from './control/bio-mpc-v6-controller.js';
+import { PIDStandardV1 } from './control/pid-standard-v1.js';
+import { LinearProjectionV2 } from './control/linear-projection-v2.js';
+import { MPCDeterministicV3 } from './control/mpc-deterministic-v3.js';
+import { MPCKalmanV4 } from './control/mpc-kalman-v4.js';
+import { MPCStochasticV5 } from './control/mpc-stochastic-v5.js';
+import { MPCAdaptiveV6 } from './control/mpc-adaptive-v6.js';
+import { MPCAsymmetricV7_5 } from './control/mpc-asymmetric-v7-5.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -31,30 +31,29 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
 try {
     // Controllers
     const controllers = {
-        softGlide: new SoftGlideController({ outputMin: 50, outputMax: 400 }),
-        projected: new ProjectedController({ outputMin: 50, outputMax: 400 }),
-        bioMPC: new BioMPCController({ outputMin: 50, outputMax: 400 }),
-        bioMPCV4: new BioMPCV4Controller({ outputMin: 50, outputMax: 400 }),
-        bioMPCV5: new BioMPCV5Controller({ outputMin: 50, outputMax: 400 }),
-        bioMPCV6: new BioMPCV6Controller({ outputMin: 50, outputMax: 400 })
+        pidV1: new PIDStandardV1({ outputMin: 50, outputMax: 400 }),
+        projectionV2: new LinearProjectionV2({ outputMin: 50, outputMax: 400 }),
+        mpcV3: new MPCDeterministicV3({ outputMin: 50, outputMax: 400 }),
+        mpcV4: new MPCKalmanV4({ outputMin: 50, outputMax: 400 }),
+        mpcV5: new MPCStochasticV5({ outputMin: 50, outputMax: 400 }),
+        mpcV6: new MPCAdaptiveV6({ outputMin: 50, outputMax: 400 }),
+        mpcV7: new MPCAsymmetricV7_5({ outputMin: 50, outputMax: 400 })
     };
 
     // State
     const state = {
         hr: 0,
-        power: 0,
-        cadence: 0,
-        targetHR: 127,
+        power: 100,
+        cadence: 80,
+        targetHR: 130, // Default to Zone 2
+        controllerName: 'pidV1',
+        controller: controllers.pidV1, // Default Controller
         elapsed: 0,
         isRunning: false,
         isConnected: false,
-        mode: 'softGlide', // Default
         useMock: false,
         baseline: null, // Calibration
         simulationSpeed: 1,
-        get controller() {
-            return controllers[this.mode] || controllers.softGlide;
-        }
     };
 
     const bench = new Benchmark();
@@ -67,8 +66,8 @@ try {
     // ... (Event Listeners) ...
 
     // Algorithm Switcher
-    if (document.getElementById('algoSelect')) {
-        document.getElementById('algoSelect').addEventListener('change', (e) => {
+    if (document.getElementById('algoSelector')) {
+        document.getElementById('algoSelector').addEventListener('change', (e) => {
             const newMode = e.target.value;
             if (controllers[newMode]) {
                 console.log(`[App] Switching Algorithm: ${state.mode} -> ${newMode} `);
@@ -80,6 +79,8 @@ try {
 
                 // Switch
                 state.mode = newMode;
+                state.controllerName = newMode; // Sync name
+                state.controller = controllers[newMode]; // ACTUAL CONTROLLER SWITCH
 
                 // Reset new controller
                 if (state.controller && state.controller.reset) {
@@ -121,7 +122,7 @@ try {
         connectTrainerBtn: document.getElementById('connectTrainerBtn'),
         connectHrBtn: document.getElementById('connectHrBtn'),
         modeBtn: document.getElementById('modeBtn'),
-        algoSelect: document.getElementById('algoSelect'), // Algorithm Switcher
+        algoSelector: document.getElementById('algoSelector'), // Algorithm Switcher
     };
 
     // --- CHART LOGIC ---
