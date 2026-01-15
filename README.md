@@ -23,6 +23,13 @@ The Bio-MPC series utilizes a physiological state-space model to simulate athlet
 *   **Bio-MPC V5 (Stochastic Oracle)**: The current production standard for robust physiological control.
     *   **Monte Carlo Simulation**: Instead of a single deterministic simulation, V5 executes 20 parallel simulations per step, each injected with randomized physiological noise (gain and tau jitter).
     *   **p95 Safety Margin**: The controller selects a power target that is mathematically safe across 95% of predicted probable futures, ensuring robust overshoot protection in high-variability environments.
+*   **Bio-MPC V6 (Adaptive Oracle)**: The current flagship controller, featuring the most advanced physiological adaptation.
+    *   **Recursive Least Squares (RLS)**: Continuously adapts physiological `gain` and `tau` parameters to the individual athlete during the session.
+    *   **Smith Predictor**: Compensates for the inherent ~6-second latency of HR sensors, reducing oscillation in feedback loops.
+    *   **Ornstein-Uhlenbeck Noise**: Replaces Gaussian noise with correlated noise that models physiological persistence (fatigue, thermal drift).
+    *   **Adaptive Horizon**: Dynamically adjusts prediction horizon (30s to 75s) based on distance from target HR.
+    *   **Gradient Descent + Momentum**: Replaces hill-climbing with a true gradient-based optimizer for faster convergence.
+    *   **Zone Awareness (VT1/VT2)**: Provides increased precision near critical physiological thresholds using p99 hard ceiling.
 
 ## Simulation Engine
 
