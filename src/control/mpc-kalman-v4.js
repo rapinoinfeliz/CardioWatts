@@ -8,7 +8,7 @@
  * 4. Jerk Penalty: Extreme stability.
  */
 
-export class BioMPCV4Controller {
+export class MPCKalmanV4 {
     constructor(config = {}) {
         this.outputMin = config.outputMin || 50;
         this.outputMax = config.outputMax || 400;

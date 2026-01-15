@@ -1,5 +1,5 @@
 
-export class ProjectedController {
+export class LinearProjectionV2 {
     constructor({ outputMin, outputMax }) {
         this.outputMin = outputMin || 50;
         this.outputMax = outputMax || 400;

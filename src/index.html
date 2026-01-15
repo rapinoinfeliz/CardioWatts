@@ -395,24 +395,16 @@
             <button id="connectHrBtn" class="connect-btn">HRM</button>
 
             <!-- Algorithm Switcher (Discreet) -->
-            <select id="algoSelect" style="
-                background: rgba(0,0,0,0.3); 
-                border: 1px solid rgba(255,255,255,0.1); 
-                color: #888; 
-                padding: 0 10px; 
-                border-radius: 8px; 
-                font-family: 'Outfit', sans-serif;
-                font-size: 0.75rem;
-                outline: none;
-                height: 44px;
-                flex: 0 0 auto;
-            ">
-                <option value="softGlide" selected>SoftGlide</option>
-                <option value="projected">Agility V2 (Projected)</option>
-                <option value="bioMPC">Bio-MPC V3 (Predictive)</option>
-                <option value="bioMPCV4">Bio-MPC V4 (Mastermind)</option>
-                <option value="bioMPCV5">Bio-MPC V5 (Stochastic Oracle)</option>
-                <option value="bioMPCV6">Bio-MPC V6 (Adaptive Oracle)</option>
+            <!-- Algorithm Switcher (Discreet) -->
+            <select id="algoSelector"
+                style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff; font-size: 14px;">
+                <option value="pidV1">PID Standard V1 (Reactive)</option>
+                <option value="projectionV2">Linear Projection V2 (Predictive)</option>
+                <option value="mpcV3">MPC Deterministic V3 (Static)</option>
+                <option value="mpcV4">MPC Kalman V4 (Filtered)</option>
+                <option value="mpcV5">MPC Stochastic V5 (Robust)</option>
+                <option value="mpcV6">MPC Adaptive V6 (Smart)</option>
+                <option value="mpcV7">MPC Asymmetric V7.5 (Cognitive)</option>
             </select>
             <button id="startBtn" class="primary" disabled
                 style="flex: 0 0 auto; padding: 0 24px; min-width: 100px;">START</button>

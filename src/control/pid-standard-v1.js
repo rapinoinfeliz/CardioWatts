@@ -1,5 +1,5 @@
 
-export class SoftGlideController {
+export class PIDStandardV1 {
     constructor({ outputMin, outputMax }) {
         this.outputMin = outputMin || 50;
         this.outputMax = outputMax || 400;

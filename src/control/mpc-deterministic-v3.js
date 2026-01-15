@@ -8,7 +8,7 @@
  * 3. Adaptation: Adjusts internal model parameters (Gain/Tau) based on real-world error.
  */
 
-export class BioMPCController {
+export class MPCDeterministicV3 {
     constructor(config = {}) {
         this.outputMin = config.outputMin || 50;
         this.outputMax = config.outputMax || 400;
