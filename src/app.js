@@ -5,6 +5,8 @@ import MockConnectable from './ble/mock-connectable.js';
 import { SoftGlideController } from './control/soft-glide-controller.js';
 import { ProjectedController } from './control/projected-controller.js';
 import { BioMPCController } from './control/bio-mpc-controller.js';
+import { BioMPCV4Controller } from './control/bio-mpc-v4-controller.js';
+import { BioMPCV5Controller } from './control/bio-mpc-v5-controller.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -30,7 +32,9 @@ try {
     const controllers = {
         softGlide: new SoftGlideController({ outputMin: 50, outputMax: 400 }),
         projected: new ProjectedController({ outputMin: 50, outputMax: 400 }),
-        bioMPC: new BioMPCController({ outputMin: 50, outputMax: 400 })
+        bioMPC: new BioMPCController({ outputMin: 50, outputMax: 400 }),
+        bioMPCV4: new BioMPCV4Controller({ outputMin: 50, outputMax: 400 }),
+        bioMPCV5: new BioMPCV5Controller({ outputMin: 50, outputMax: 400 })
     };
 
     // State
@@ -45,6 +49,7 @@ try {
         mode: 'softGlide', // Default
         useMock: false,
         baseline: null, // Calibration
+        simulationSpeed: 1,
         get controller() {
             return controllers[this.mode] || controllers.softGlide;
         }
@@ -359,6 +364,54 @@ try {
         simBtn.style.opacity = "0.5";
         document.body.appendChild(simBtn);
 
+        // SPEED CONTROLS (Only visible when SIM ACTIVE)
+        const speedContainer = document.createElement('div');
+        speedContainer.id = "simSpeedControls";
+        speedContainer.style.position = "absolute";
+        speedContainer.style.bottom = "40px";
+        speedContainer.style.right = "10px";
+        speedContainer.style.display = "none";
+        speedContainer.style.gap = "4px";
+        document.body.appendChild(speedContainer);
+
+        [1, 2, 4, 8].forEach(speed => {
+            const btn = document.createElement('button');
+            btn.innerText = `${speed}x`;
+            btn.style.fontSize = "0.6rem";
+            btn.style.padding = "2px 6px";
+            btn.style.background = "#222";
+            btn.style.color = "#888";
+            btn.style.border = "1px solid #333";
+            btn.style.borderRadius = "4px";
+            btn.style.cursor = "pointer";
+
+            btn.addEventListener('click', () => {
+                if (conn && typeof conn.setSpeed === 'function') {
+                    state.simulationSpeed = speed;
+                    conn.setSpeed(speed);
+
+                    // Restart loops if running
+                    if (state.isRunning) {
+                        stopLoopsForReconfiguration();
+                        startRide();
+                    }
+
+                    // Highlight active
+                    Array.from(speedContainer.children).forEach(b => {
+                        b.style.background = "#222";
+                        b.style.color = "#888";
+                    });
+                    btn.style.background = "var(--success)";
+                    btn.style.color = "black";
+                }
+            });
+            speedContainer.appendChild(btn);
+            if (speed === 1) {
+                btn.style.background = "var(--success)";
+                btn.style.color = "black";
+            }
+        });
+
         simBtn.addEventListener('click', () => {
             // DATA LOGIC CLEANUP
             if (conn && typeof conn.destroy === 'function') {
@@ -380,6 +433,9 @@ try {
 
                 // Reset Benchmark
                 bench.start(`Sim: ${state.mode}`, state.hr, state.targetHR);
+
+                // Show Speed Controls
+                document.getElementById('simSpeedControls').style.display = 'flex';
             } else {
                 simBtn.style.background = "#222";
                 simBtn.style.color = "#666";
@@ -390,6 +446,9 @@ try {
                 conn = Connectable({ onData: handleData, onStatus: handleStatus });
                 statusState.general = "BLE Mode Ready";
                 renderStatus();
+
+                // Hide Speed Controls
+                document.getElementById('simSpeedControls').style.display = 'none';
             }
         });
     }
@@ -427,7 +486,7 @@ try {
         }
         let currentPowerTarget = 100;
 
-        // Control Loop (Every 2s)
+        // Control Loop
         controlInterval = setInterval(async () => {
             if (!state.isRunning) return;
 
@@ -439,24 +498,25 @@ try {
             if (state.isConnected) {
                 await conn.setPower(currentPowerTarget);
             }
-        }, 2000);
+        }, 2000 / state.simulationSpeed);
 
         // Timer Loop (Elapsed Time)
-        startTime = Date.now();
-
         timerInterval = setInterval(() => {
-            const elapsedMs = Date.now() - startTime;
-            state.elapsed = Math.floor(elapsedMs / 1000);
+            state.elapsed += 1;
             updateTimer();
             // Update Chart every second
             updateChart();
-        }, 1000);
+        }, 1000 / state.simulationSpeed);
+    }
+
+    function stopLoopsForReconfiguration() {
+        clearInterval(controlInterval);
+        clearInterval(timerInterval);
     }
 
     function stopRide() {
         state.isRunning = false;
-        clearInterval(controlInterval);
-        clearInterval(timerInterval);
+        stopLoopsForReconfiguration();
 
         ui.startBtn.innerText = "START";
         ui.startBtn.classList.remove('danger');

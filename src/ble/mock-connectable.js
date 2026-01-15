@@ -18,7 +18,8 @@ export default function MockConnectable(args = {}) {
         currentHR: 65, // Resting HR
         currentDemand: 65,
         fatigue: 0,
-        simStartTime: 0
+        simStartTime: 0,
+        speedMultiplier: 1
     };
 
     // Physics Engine Interval
@@ -26,6 +27,9 @@ export default function MockConnectable(args = {}) {
 
     function physicsLoop() {
         if (!state.simulating) return;
+
+        // Effective dt (10Hz loop = 0.1s base)
+        const dt = 0.1 * state.speedMultiplier;
 
         // 1. Simulate Trainer Response (ERG Mode Lag)
         // ThinkRider X2 takes about 2-3 seconds to smooth to target
@@ -53,11 +57,13 @@ export default function MockConnectable(args = {}) {
         const ALPHA = 0.5; // Lower-bound saturation
         const BETA = 0.8;  // Upper-bound saturation (Stronger near HR Max)
 
-        // dt = 0.1s
-        const dt = 0.1;
+        // Cardiac Drift: +0.2 bpm every minute (~1 bpm per 5 mins)
+        if (state.simStartTime === 0) state.simStartTime = Date.now();
+        const elapsedMins = (Date.now() - state.simStartTime) / 60000;
+        const drift = state.currentPower > 50 ? (elapsedMins * 0.2) : 0;
 
         // Current Intensity Target
-        const metabolicPowerTarget = (state.currentPower * GAIN) + HR_MIN;
+        const metabolicPowerTarget = (state.currentPower * GAIN) + HR_MIN + drift;
 
         // Update Demand State
         // dD/dt = (Target - D) / Tau
@@ -157,6 +163,11 @@ export default function MockConnectable(args = {}) {
         state.targetPower = watts;
     }
 
+    function setSpeed(multiplier) {
+        state.speedMultiplier = multiplier;
+        console.log(`[Mock] Simulation speed set to ${multiplier}x`);
+    }
+
     async function destroy() {
         if (loopId) {
             clearInterval(loopId);
@@ -171,6 +182,7 @@ export default function MockConnectable(args = {}) {
         connectHR,
         disconnect,
         setPower,
+        setSpeed,
         destroy, // EXPOSED
         services: { trainer: true, hr: true } // Fake services
     };
