@@ -16,7 +16,9 @@ export default function MockConnectable(args = {}) {
         currentPower: 0,
         currentCadence: 0,
         currentHR: 65, // Resting HR
-        fatigue: 0
+        currentDemand: 65,
+        fatigue: 0,
+        simStartTime: 0
     };
 
     // Physics Engine Interval
@@ -38,24 +40,48 @@ export default function MockConnectable(args = {}) {
             state.currentCadence = 0;
         }
 
-        // 2. Simulate Physiological HR Response
-        // Simple First-Order Model:
-        // TargetHR = RestingHR + (Power / Gain) + Drift
-        // Gain approx 0.45 BPM/Watt for a fit individual (200W -> 155bpm, 65 rest -> +90bpm bump)
-        // So 200 * 0.45 = 90. 65 + 90 = 155.
+        // 2. Simulate Physiological HR Response (Apple-inspired ODE)
+        // State 1: Demand (Metabolic intensity)
+        // State 2: Heart Rate (Following demand)
 
-        const gain = 0.45;
-        const metabolicPower = state.currentPower * gain + 65;
+        // Configuration
+        const HR_MIN = 65;
+        const HR_MAX = 195;
+        const GAIN = 0.45; // bpm/Watt
+        const TAU_DEMAND = 20.0; // Seconds (Fastest metabolic response)
+        const TAU_HR = 30.0; // Seconds (Cardiac lag)
+        const ALPHA = 0.5; // Lower-bound saturation
+        const BETA = 0.8;  // Upper-bound saturation (Stronger near HR Max)
 
-        // HR Response Lag (Tau ~ 45 seconds)
-        // Update every 100ms means 10 updates per sec.
-        // alpha = dt / (tau + dt) -> 0.1 / (45 + 0.1) ~ 0.002
-        const alpha = 0.005; // Slightly faster for demo purposes
+        // dt = 0.1s
+        const dt = 0.1;
 
-        state.currentHR += (metabolicPower - state.currentHR) * alpha;
+        // Current Intensity Target
+        const metabolicPowerTarget = (state.currentPower * GAIN) + HR_MIN;
+
+        // Update Demand State
+        // dD/dt = (Target - D) / Tau
+        const demandDot = (metabolicPowerTarget - (state.currentDemand || state.currentHR)) / TAU_DEMAND;
+        state.currentDemand = (state.currentDemand || state.currentHR) + demandDot * dt;
+
+        // Update HR State with Saturation
+        // S = ((HR - HR_MIN)/60)^alpha * ((HR_MAX - HR)/60)^beta
+        const f_min = Math.pow(Math.abs(state.currentHR - HR_MIN + 0.1) / 60, ALPHA);
+        const f_max = Math.pow(Math.abs(HR_MAX - state.currentHR + 0.1) / 60, BETA);
+
+        // hr_dot = A * f_min * f_max * (Demand - HR)
+        // A is a scaling factor to keep kinetics realistic (~0.5)
+        const A = 0.5;
+        let hrDot = A * f_min * f_max * (state.currentDemand - state.currentHR);
+
+        // Clamping/Safety logic at boundaries
+        if (state.currentHR >= HR_MAX && hrDot > 0) hrDot = HR_MAX - state.currentHR;
+        if (state.currentHR <= HR_MIN && hrDot < 0) hrDot = HR_MIN - state.currentHR;
+
+        state.currentHR += hrDot * dt;
 
         // Add Noise (Heart Rate Variability-ish)
-        const noise = (Math.random() - 0.5) * 0.5;
+        const noise = (Math.random() - 0.5) * 0.4;
 
         // Emit Data
         const output = {};
