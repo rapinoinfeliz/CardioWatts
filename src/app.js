@@ -7,6 +7,7 @@ import { ProjectedController } from './control/projected-controller.js';
 import { BioMPCController } from './control/bio-mpc-controller.js';
 import { BioMPCV4Controller } from './control/bio-mpc-v4-controller.js';
 import { BioMPCV5Controller } from './control/bio-mpc-v5-controller.js';
+import { BioMPCV6Controller } from './control/bio-mpc-v6-controller.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -34,7 +35,8 @@ try {
         projected: new ProjectedController({ outputMin: 50, outputMax: 400 }),
         bioMPC: new BioMPCController({ outputMin: 50, outputMax: 400 }),
         bioMPCV4: new BioMPCV4Controller({ outputMin: 50, outputMax: 400 }),
-        bioMPCV5: new BioMPCV5Controller({ outputMin: 50, outputMax: 400 })
+        bioMPCV5: new BioMPCV5Controller({ outputMin: 50, outputMax: 400 }),
+        bioMPCV6: new BioMPCV6Controller({ outputMin: 50, outputMax: 400 })
     };
 
     // State
