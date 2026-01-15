@@ -1,69 +1,53 @@
-# CardioWatts 🚲⚡
+# CardioWatts
 
-**CardioWatts** é uma plataforma avançada de treinamento de ciclismo baseada em Heart Rate (FC). Diferente dos aplicativos tradicionais que focam apenas em manter uma potência fixa (Modo ERG), o CardioWatts utiliza algoritmos de controle de última geração para ajustar a intensidade do seu treino com base na sua **resposta fisiológica real**.
+CardioWatts is an advanced indoor cycling control platform designed to regulate exercise intensity based on real-time physiological response. Unlike traditional ERG mode applications that maintain static power targets, CardioWatts utilizes various control theory implementations to adjust trainer resistance dynamically, ensuring the athlete remains within the precise target heart rate (HR) zone regardless of drift, fatigue, or environmental factors.
 
----
+## Control Algorithms
 
-## 🧠 Algoritmos de Controle (The Engine)
+The platform implements five generations of control logic, categorized by their predictive capabilities and physiological modeling.
 
-O projeto evoluiu por 5 gerações de algoritmos, cada um elevando a precisão do controle:
+### Core Control (SoftGlide & Agility)
 
-### 1. SoftGlide (V1)
-Um controlador reativo básico. Ele ajusta a potência baseando-se no erro atual do batimento cardíaco. É ideal para treinos regenerativos onde a suavidade é mais importante que a velocidade de resposta.
+*   **SoftGlide (V1)**: A baseline reactive controller using a proportional-integral (PI) logic variant. It adjusts resistance based on the immediate error between current and target HR. Best suited for low-intensity recovery sessions where stability is prioritized over response time.
+*   **Agility V2 (Projected)**: Implements linear trend projection. By calculating the slope of heart rate changes over the previous 15 seconds, the controller projects future HR values. Resistance is adjusted preemptively if the projected HR is calculated to exceed the target.
 
-### 2. Agility V2 (Projected)
-Introduce a lógica de **predição linear**. Em vez de olhar para o agora, ele calcula a tendência (Slope) dos últimos 15 segundos e projeta onde seu batimento estará. Se a projeção ultrapassar o alvo, ele freia preventivamente.
+### Model Predictive Control (Bio-MPC Series)
 
-### 3. Bio-MPC V3 (Predictive)
-O primeiro salto para o **Model Predictive Control (MPC)**. 
-- **Modelo Interno**: Possui um "Digital Twin" do atleta baseado em equações diferenciais.
-- **Horizonte de 45s**: Simula 11 futuros possíveis a cada 2 segundos.
-- **Otimização**: Escolhe o caminho que chega ao alvo com zero overshoot.
+The Bio-MPC series utilizes a physiological state-space model to simulate athlete response.
 
-### 4. Bio-MPC V4 (The Mastermind)
-Refinamento cirúrgico da fisiologia:
-- **Histerese Fisiológica**: Reconhece que o coração acelera mais rápido (Rise) do que desacelera (Fall).
-- **Filtro de Kalman**: Estima o "Estado Oculto" da demanda metabólica, ignorando ruídos do sensor de FC.
-- **Precisão de 1W**: Otimizador *Hill-Climbing* busca o ajuste exato para máximo conforto.
+*   **Bio-MPC V3 (Predictive)**: Features an internal second-order differential equation model (Digital Twin). Every 2 seconds, it simulates 11 potential futures across a 45-second horizon to identify the power output that minimizes cost (error and overshoot).
+*   **Bio-MPC V4 (Mastermind)**: An evolution of V3 focusing on asymmetric physiology and signal processing.
+    *   **Hysteresis Modeling**: Recognizes that cardiac acceleration (sympathetic) and recovery (parasympathetic) operate with different time constants.
+    *   **Kalman Filtering**: Estimates hidden metabolic demand by fusing power input and HR output, effectively filtering sensor noise and transient spikes.
+    *   **1W Precision**: A hill-climbing optimization path replaces discrete searching, allowing for ultra-smooth resistance transitions.
+*   **Bio-MPC V5 (Stochastic Oracle)**: The current production standard for robust physiological control.
+    *   **Monte Carlo Simulation**: Instead of a single deterministic simulation, V5 executes 20 parallel simulations per step, each injected with randomized physiological noise (gain and tau jitter).
+    *   **p95 Safety Margin**: The controller selects a power target that is mathematically safe across 95% of predicted probable futures, ensuring robust overshoot protection in high-variability environments.
 
-### 5. Bio-MPC V5 (Stochastic Oracle) 👑
-O estado da arte em controle robusto:
-- **Simulação Monte Carlo**: Roda 20 simulações paralelas com 10% de ruído aleatório.
-- **Segurança p95**: Só aumenta a potência se for seguro em 95% dos "futuros prováveis".
-- **Resiliência**: Perfeito para treinos em condições adversas ou com sensores instáveis.
+## Simulation Engine
 
----
+The application includes a built-in physiological simulator for testing and validation.
 
-## 🔬 O Simulador (Physio Engine)
+### Physiological Modeling
 
-Para validar esses algoritmos, o CardioWatts possui um simulador integrado de alta fidelidade:
+The engine simulates cardiac response using a two-stage process:
+1.  **Metabolic Demand**: Power is converted to a demand state with an approximate 20-second delay ($\tau_{demand}$).
+2.  **Heart Rate Response**: The demand state drives HR through a saturated non-linear filter ($\tau_{hr} \approx 30s$).
+3.  **Cardiac Drift**: The model simulates physiological drift over time, increasing HR at a rate of 0.2 bpm/min during high-intensity blocks.
 
-### Modelo de 2ª Ordem (ODE)
-Inspirado em pesquisas da Apple Health e fisiologia do esporte, o simulador utiliza um sistema de duas etapas:
-1.  **Potência → Demanda Metabólica**: Atraso de ~20s ($\tau_{demand}$).
-2.  **Demanda → Frequência Cardíaca**: Atraso de ~30s ($\tau_{hr}$) com termos de saturação não-linear e **Cardiac Drift** (aumenta 0.2bpm/min se a carga for alta).
+### Time Compression (Speed Control)
 
-### Speed Control ⏩
-Você pode acelerar o tempo da simulação em **2x, 4x ou 8x**. 
-- O app acelera não apenas o gráfico, mas toda a física e a lógica dos algoritmos sincronizadamente. Um treino de 45 minutos pode ser testado em apenas 5 minutos.
+Testing long-form intervals is facilitated by a multi-rate engine. Users can compress simulation time by factors of 2x, 4x, or 8x. All internal logic, including the MPC solvers and physics loops, scale synchronously to maintain mathematical consistency with real-time behavior.
 
----
+## Usage and Implementation
 
-## 🚀 Como Usar
+1.  **Hardware Connection**: Connect via the Web Bluetooth API to any standard FTMS trainer and BLE heart rate monitor.
+2.  **Algorithm Selection**: Choose the control law based on training goals. Bio-MPC V5 is recommended for high-precision intervals (e.g., Sweet Spot).
+3.  **Metrics and Benchmarking**: The integrated benchmarking tool tracks "Time to Target" and "Overshoot Max," allowing for objective comparison of algorithm efficiency across different physiological profiles.
 
-1.  **Conexão**: Clique em `TRAINER` e `HRM` para conectar seus dispositivos via Bluetooth (ou use o `SIMULATOR`).
-2.  **Seleção**: Escolha o algoritmo no menu suspenso (recomendamos o **Bio-MPC V5** para máxima precisão).
-3.  **Alvo**: Defina seu `Target HR` e clique em **START**.
-4.  **Ajuste**: Se sentir que o app está subestimando seu condicionamento, aumente o alvo ou use a ferramenta de calibração.
+## Technical Stack
 
----
-
-## 🛠️ Tecnologias
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+).
-- **Gráficos**: Chart.js com otimização para streaming de dados.
-- **Comunicação**: Web Bluetooth API.
-- **Matemática**: Algoritmos de controle preditivo, filtros de Kalman e simulações Monte Carlo.
-
----
-
-*Desenvolvido para ciclistas que buscam a perfeição metabólica.*
+*   **Frontend**: Vanilla HTML5/CSS3 and ES6 JavaScript.
+*   **Visualization**: Chart.js optimized for high-frequency data streaming.
+*   **Connectivity**: Web Bluetooth API.
+*   **Computational**: Real-time solvers for state-space models and Monte Carlo simulations.
