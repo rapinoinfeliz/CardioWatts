@@ -4,6 +4,7 @@ import MockConnectable from './ble/mock-connectable.js';
 // import { PhysioController } from './control/physio-controller.js'; // Deprecated
 import { SoftGlideController } from './control/soft-glide-controller.js';
 import { ProjectedController } from './control/projected-controller.js';
+import { BioMPCController } from './control/bio-mpc-controller.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -28,7 +29,8 @@ try {
     // Controllers
     const controllers = {
         softGlide: new SoftGlideController({ outputMin: 50, outputMax: 400 }),
-        projected: new ProjectedController({ outputMin: 50, outputMax: 400 })
+        projected: new ProjectedController({ outputMin: 50, outputMax: 400 }),
+        bioMPC: new BioMPCController({ outputMin: 50, outputMax: 400 })
     };
 
     // State
