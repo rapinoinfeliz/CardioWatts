@@ -8,6 +8,9 @@ import { MPCKalmanV4 } from './control/mpc-kalman-v4.js';
 import { MPCStochasticV5 } from './control/mpc-stochastic-v5.js';
 import { MPCAdaptiveV6 } from './control/mpc-adaptive-v6.js';
 import { MPCAsymmetricV7_5 } from './control/mpc-asymmetric-v7-5.js';
+import { MPCAsymmetricV7_6 } from './control/mpc-asymmetric-v7-6.js';
+import { MPCv8 } from './control/mpc-v8.js';
+import { MPCv9 } from './control/mpc-v9.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -37,7 +40,10 @@ try {
         mpcV4: new MPCKalmanV4({ outputMin: 50, outputMax: 400 }),
         mpcV5: new MPCStochasticV5({ outputMin: 50, outputMax: 400 }),
         mpcV6: new MPCAdaptiveV6({ outputMin: 50, outputMax: 400 }),
-        mpcV7: new MPCAsymmetricV7_5({ outputMin: 50, outputMax: 400 })
+        mpcV7: new MPCAsymmetricV7_5({ outputMin: 50, outputMax: 400 }),
+        mpcV7_6: new MPCAsymmetricV7_6({ outputMin: 50, outputMax: 400 }),
+        mpcV8: new MPCv8({ outputMin: 50, outputMax: 400 }),
+        mpcV9: new MPCv9({ outputMin: 50, outputMax: 400 })
     };
 
     // State
@@ -46,8 +52,8 @@ try {
         power: 100,
         cadence: 80,
         targetHR: 130, // Default to Zone 2
-        controllerName: 'pidV1',
-        controller: controllers.pidV1, // Default Controller
+        controllerName: 'mpcV7_6',
+        controller: controllers.mpcV7_6, // Default Controller
         elapsed: 0,
         isRunning: false,
         isConnected: false,
