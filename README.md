@@ -1,6 +1,31 @@
-# CardioWatts
+# CardioWatts - Bio-Adaptive Supervisory MPC 🧠🚴
 
-CardioWatts is an advanced indoor cycling control platform designed to regulate exercise intensity based on real-time physiological response. Unlike traditional ERG mode applications that maintain static power targets, CardioWatts utilizes various control theory implementations to adjust trainer resistance dynamically, ensuring the athlete remains within the precise target heart rate (HR) zone regardless of drift, fatigue, or environmental factors.
+CardioWatts is an advanced heart rate controller for indoor cycling, utilizing Model Predictive Control (MPC) with physiological state estimation (Bio-Observer) and contextual intelligence to maintain precise metabolic targets.
+
+## 🚀 Bio-MPC V10.1 "Personal Tuned"
+**The latest version uses Offline Learning to personalize internal parameters to YOUR unique physiology.**
+
+### Features V10.1
+*   **Zero-Configuration:** Starts with perfect `Gain` and `Tau` values derived from your history.
+*   **Drift Compensation:** Knows exactly how much your HR drifts per hour.
+*   **Supervisory Layer:** Auto-detects `Intervals`, `Steady State`, and `Recovery` phases.
+*   **Multi-objective:** Blends tracking accuracy with safety and comfort.
+
+## 🧠 Offline Learning (How to Personalize)
+1.  Place your `.fit` files in the `fit/` folder.
+2.  Run the optimizer:
+    ```bash
+    node parameter_optimizer.js
+    ```
+3.  The algorithm will find your physiological constants (Gain, TauRise, TauFall).
+4.  Bio-MPC V10.1 will automatically be tuned with these values.
+
+## Algorithms
+*   **Bio-MPC V10.1 (Personal Tuned):** **(Default)** Optimized with your data. best performance.
+*   **Bio-MPC V10.0 (Supervisory):** Auto-adaptive, zero-config for general users.
+*   **Bio-MPC V9.0 (Contextual):** Uses Adaptive Kalman Filter & Smart Integral.
+*   **Bio-MPC V8.0 (Zero Error):** Aggressive Integral action for precision.
+*   **Bio-MPC V7.6 (Precision):** Robust asymmetric deadband control.
 
 ## Control Algorithms
 

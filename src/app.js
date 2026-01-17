@@ -11,6 +11,8 @@ import { MPCAsymmetricV7_5 } from './control/mpc-asymmetric-v7-5.js';
 import { MPCAsymmetricV7_6 } from './control/mpc-asymmetric-v7-6.js';
 import { MPCv8 } from './control/mpc-v8.js';
 import { MPCv9 } from './control/mpc-v9.js';
+import { MPCv10 } from './control/mpc-v10.js';
+import { MPCv10_1 } from './control/mpc-v10-1.js';
 import { Benchmark } from './analysis/benchmark.js';
 import { wait } from './utils.js';
 import { Chart, registerables } from 'chart.js';
@@ -43,7 +45,9 @@ try {
         mpcV7: new MPCAsymmetricV7_5({ outputMin: 50, outputMax: 400 }),
         mpcV7_6: new MPCAsymmetricV7_6({ outputMin: 50, outputMax: 400 }),
         mpcV8: new MPCv8({ outputMin: 50, outputMax: 400 }),
-        mpcV9: new MPCv9({ outputMin: 50, outputMax: 400 })
+        mpcV9: new MPCv9({ outputMin: 50, outputMax: 400 }),
+        mpcV10: new MPCv10({ outputMin: 50, outputMax: 400 }),
+        mpcV10_1: new MPCv10_1({ outputMin: 50, outputMax: 400 })
     };
 
     // State
