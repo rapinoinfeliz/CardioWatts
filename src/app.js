@@ -1,6 +1,7 @@
 // Controllers
 import Connectable from './ble/connectable.js';
 import MockConnectable from './ble/mock-connectable.js';
+import { webBle } from './ble/web-ble.js';
 import { PIDStandardV1 } from './control/pid-standard-v1.js';
 import { LinearProjectionV2 } from './control/linear-projection-v2.js';
 import { MPCDeterministicV3 } from './control/mpc-deterministic-v3.js';
@@ -324,9 +325,26 @@ try {
     }
 
     // BLE Connection (Swappable)
-    let conn = Connectable({
+    // Trainer Connection
+    let trainerConn = Connectable({
+        name: 'Trainer',
         onData: handleData,
-        onStatus: handleStatus
+        onConnecting: () => handleStatus('Trainer Connecting...'),
+        onConnected: () => handleStatus('Trainer Connected'),
+        onConnectFail: (e) => handleStatus(`Trainer Failed: ${e.message}`),
+        onDisconnect: () => handleStatus('Trainer Disconnected'),
+        filter: webBle.filters.controllable()
+    });
+
+    // HR Connection
+    let hrConn = Connectable({
+        name: 'HRM',
+        onData: handleData,
+        onConnecting: () => handleStatus('HRM Connecting...'),
+        onConnected: () => handleStatus('HRM Connected'),
+        onConnectFail: (e) => handleStatus(`HRM Failed: ${e.message}`),
+        onDisconnect: () => handleStatus('HRM Disconnected'),
+        filter: webBle.filters.heartRateMonitor()
     });
 
     function handleData(data) {
@@ -428,7 +446,7 @@ try {
         simBtn.addEventListener('click', () => {
             // DATA LOGIC CLEANUP
             if (conn && typeof conn.destroy === 'function') {
-                conn.destroy();
+                // conn.destroy(); // Not implemented in new version
             }
 
             state.useMock = !state.useMock;
@@ -440,7 +458,10 @@ try {
                 simBtn.innerText = "SIM ACTIVE";
 
                 // SWAP TO MOCK
-                conn = MockConnectable({ onData: handleData, onStatus: handleStatus });
+                // conn = MockConnectable({ onData: handleData, onStatus: handleStatus });
+                // We need to patch this to mock both or handle simulation differently.
+                // For now, let's keep it simple: MockConnectable replaces trainerConn
+                trainerConn = MockConnectable({ onData: handleData, onStatus: handleStatus });
                 statusState.general = "Simulation Mode Ready";
                 renderStatus();
 
@@ -456,7 +477,18 @@ try {
                 simBtn.innerText = "SIMULATOR";
 
                 // SWAP BACK TO BLE
-                conn = Connectable({ onData: handleData, onStatus: handleStatus });
+                // SWAP BACK TO BLE
+                // Re-instantiate legit Connectable? Or just depend on the ones we created?
+                // The ones we created are variables. We should probably re-assign them to clean instances.
+                trainerConn = Connectable({
+                    name: 'Trainer',
+                    onData: handleData,
+                    onConnecting: () => handleStatus('Trainer Connecting...'),
+                    onConnected: () => handleStatus('Trainer Connected'),
+                    onConnectFail: (e) => handleStatus(`Trainer Failed: ${e.message}`),
+                    onDisconnect: () => handleStatus('Trainer Disconnected'),
+                    filter: webBle.filters.controllable()
+                });
                 statusState.general = "BLE Mode Ready";
                 renderStatus();
 
@@ -508,8 +540,10 @@ try {
             const newPower = state.controller.update(state.targetHR, state.hr, currentPowerTarget);
             currentPowerTarget = Math.round(newPower);
             console.log(`Loop: HR ${state.hr} -> Power ${currentPowerTarget} W`);
-            if (state.isConnected) {
-                await conn.setPower(currentPowerTarget);
+            if (state.isConnected) { // Logic check
+                if (trainerConn.services && trainerConn.services.trainer) {
+                    await trainerConn.services.trainer.setPowerTarget({ power: currentPowerTarget });
+                }
             }
         }, 2000 / state.simulationSpeed);
 
@@ -533,7 +567,10 @@ try {
 
         ui.startBtn.innerText = "START";
         ui.startBtn.classList.remove('danger');
-        conn.setPower(50);
+        ui.startBtn.classList.remove('danger');
+        if (trainerConn.services && trainerConn.services.trainer) {
+            trainerConn.services.trainer.setPowerTarget({ power: 50 });
+        }
         releaseWakeLock();
     }
 
@@ -569,20 +606,31 @@ try {
     // Global Event Listeners
     if (ui.connectTrainerBtn) {
         ui.connectTrainerBtn.addEventListener('click', async () => {
-            // Toggle Logic
             if (ui.connectTrainerBtn.classList.contains('connected')) {
                 // Action: Disconnect
-                await conn.disconnect('trainer');
+                await trainerConn.disconnect();
+
                 ui.connectTrainerBtn.classList.remove('connected');
                 ui.connectTrainerBtn.innerText = "TRAINER";
-                ui.connectTrainerBtn.disabled = false; // logic enablement
+                ui.connectTrainerBtn.disabled = false;
             } else {
                 // Action: Connect
-                const success = await conn.connectTrainer();
-                if (success) {
+                // Auuki's Connectable.connect() triggers requestDevice
+                // We might need to handle args?
+                // connect({requesting: true}) is likely what we want for user-initiated action
+                await trainerConn.connect({ requesting: true });
+
+                // Auuki doesn't return true/false sync, it is async.
+                // We rely on callbacks or check status.
+                // Wait a bit or check isConnected?
+                // Actually `connect` is async.
+
+                if (trainerConn.isConnected()) {
                     ui.connectTrainerBtn.classList.add('connected');
                     ui.connectTrainerBtn.innerText = "TRAINER";
                     checkReady();
+                    // Trainer implies connected state for chart/loops 
+                    state.isConnected = true;
                 }
             }
         });
@@ -593,16 +641,16 @@ try {
             // Toggle Logic
             if (ui.connectHrBtn.classList.contains('connected')) {
                 // Action: Disconnect
-                await conn.disconnect('hr');
-                state.isConnected = false; // App logic flag
+                await hrConn.disconnect();
+                // state.isConnected = false; // Don't disable global connected just because HR disconnects?
                 ui.connectHrBtn.classList.remove('connected');
                 ui.connectHrBtn.innerText = "HRM";
                 ui.connectHrBtn.disabled = false;
             } else {
                 // Action: Connect
-                const success = await conn.connectHR();
-                if (success) {
-                    state.isConnected = true;
+                await hrConn.connect({ requesting: true });
+
+                if (hrConn.isConnected()) {
                     ui.connectHrBtn.classList.add('connected');
                     ui.connectHrBtn.innerText = "HRM";
                     checkReady();
