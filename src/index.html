@@ -296,6 +296,95 @@
             text-shadow: 0 0 30px rgba(255, 23, 68, 0.5);
         }
     </style>
+    <style>
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                gap: 16px;
+                min-height: 90vh;
+                /* Allow more vertical space */
+            }
+
+            .header {
+                padding: 16px;
+            }
+
+            .timer-display {
+                font-size: 2.5rem;
+            }
+
+            /* Compact HR Card */
+            .hr-card {
+                padding: 24px 16px;
+            }
+
+            .hr-value {
+                font-size: 6rem;
+                /* Reduced from 10rem */
+            }
+
+            .hr-label {
+                font-size: 1rem;
+            }
+
+            /* Metric adjustments */
+            #powerValue,
+            #cadenceValue {
+                font-size: 1.4rem !important;
+            }
+
+            #targetHrDisplay {
+                font-size: 1.5rem !important;
+                width: 50px !important;
+            }
+
+            button#targetDec,
+            button#targetInc {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                font-size: 1.2rem !important;
+            }
+
+            /* Chart */
+            #chartContainer {
+                height: 200px !important;
+                /* Slightly shorter on mobile */
+            }
+
+            /* Controls */
+            .controls {
+                flex-wrap: wrap;
+                /* Allow wrapping */
+                gap: 8px;
+                margin-bottom: 24px;
+            }
+
+            button.connect-btn {
+                flex: 1 1 40%;
+                /* Grow to fill space, 2 per row approx */
+                min-width: auto;
+                padding: 12px;
+                font-size: 0.8rem;
+            }
+
+            #algoSelector {
+                flex: 1 1 100%;
+                /* Full width for selector */
+                order: 3;
+                /* Move below buttons if needed or keep flow */
+                margin-top: 4px;
+            }
+
+            button#startBtn {
+                flex: 1 1 100%;
+                /* Full width start button */
+                padding: 16px;
+                order: 4;
+            }
+        }
+    </style>
 </head>
 
 <body>
