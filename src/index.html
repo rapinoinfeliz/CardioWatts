@@ -302,12 +302,14 @@
     </style>
     <style>
         /* Mobile Optimization - Premium Native Feel */
+
         @media (max-width: 600px) {
             body {
                 height: 100dvh;
                 /* Dynamic Viewport Height */
                 width: 100vw;
                 overflow: hidden;
+                /* Body doesn't scroll, container does if needed */
                 background: #000;
                 /* Darker background for OLED */
             }
@@ -321,8 +323,12 @@
                 gap: 0;
                 padding: 0;
                 padding-top: var(--safe-top);
-                padding-bottom: var(--safe-bottom);
+                padding-bottom: 0;
+                /* Handled by controls padding */
                 box-sizing: border-box;
+                overflow-y: auto;
+                /* Allow scrolling if content is too tall */
+                -webkit-overflow-scrolling: touch;
             }
 
             /* 1. Header: Compact & Fixed Top */
@@ -330,7 +336,6 @@
                 flex: 0 0 auto;
                 padding: 10px 20px;
                 background: transparent;
-                /* Cleaner look */
                 border: none;
                 box-shadow: none;
                 backdrop-filter: none;
@@ -363,15 +368,15 @@
 
             /* 2. Main HR Card: Hero Section */
             .hr-card {
-                flex: 1;
-                /* Take all available space */
+                flex: 1 1 auto;
+                /* Allow shrinking/growing */
+                min-height: 250px;
+                /* Ensure minimum space */
                 width: 100%;
                 margin: 0;
                 border-radius: 0;
-                /* Full width look */
                 border: none;
                 background: transparent;
-                /* Removing card bg for cleaner look */
                 box-shadow: none;
                 backdrop-filter: none;
                 justify-content: space-evenly;
@@ -380,11 +385,12 @@
 
             /* HR Value - Massive & Centered */
             .hr-value {
-                font-size: 22vh;
-                /* Responsive to height */
+                font-size: 18vh;
+                /* Reduced from 22vh for better fit */
                 font-weight: 800;
                 line-height: 0.8;
                 text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                transition: font-size 0.3s ease;
             }
 
             .hr-label {
@@ -419,7 +425,6 @@
                 background: rgba(255, 255, 255, 0.15) !important;
                 font-size: 1.5rem !important;
                 border-radius: 16px !important;
-                /* Squircle */
             }
 
             #targetHrDisplay {
@@ -429,7 +434,8 @@
 
             /* 3. Chart: Subtle Background Context */
             #chartContainer {
-                height: 120px !important;
+                height: 100px !important;
+                /* Reduced from 120px */
                 width: 100%;
                 flex: 0 0 auto;
                 background: transparent;
@@ -439,7 +445,6 @@
                 margin-bottom: -20px;
                 /* Overlap slightly */
                 pointer-events: none;
-                /* Let touches pass through if needed */
             }
 
             /* 4. Controls: Bottom Sheet Style */
@@ -447,8 +452,10 @@
                 flex: 0 0 auto;
                 width: 100%;
                 padding: 16px 20px;
+                padding-bottom: calc(16px + var(--safe-bottom));
+                /* Safe area padding */
                 box-sizing: border-box;
-                background: rgba(10, 10, 10, 0.8);
+                background: rgba(10, 10, 10, 0.95);
                 backdrop-filter: blur(20px);
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 24px 24px 0 0;
@@ -456,6 +463,7 @@
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
                 margin: 0;
+                z-index: 20;
             }
 
             button.connect-btn {
@@ -476,7 +484,6 @@
                 font-size: 1rem;
                 appearance: none;
                 -webkit-appearance: none;
-                /* Safely hide arrow on iOS */
             }
 
             button#startBtn {
@@ -486,6 +493,29 @@
                 font-size: 1.2rem;
                 border-radius: 16px;
                 box-shadow: 0 4px 20px rgba(252, 103, 25, 0.4);
+            }
+
+            /* Extra adjustments for smaller screens */
+            @media (max-height: 700px) {
+                .hr-value {
+                    font-size: 15vh;
+                }
+
+                .timer-display {
+                    font-size: 1.5rem;
+                }
+
+                .controls {
+                    padding: 12px 16px;
+                    padding-bottom: calc(12px + var(--safe-bottom));
+                    gap: 8px;
+                }
+
+                button.connect-btn,
+                button#startBtn,
+                #algoSelector {
+                    padding: 12px;
+                }
             }
         }
     </style>
