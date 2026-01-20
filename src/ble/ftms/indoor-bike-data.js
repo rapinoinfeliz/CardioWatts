@@ -1,70 +1,109 @@
+//
+// FTMS spec
+// 4.9 Indoor Bike Data (characteristic)
+//
+
+import { equals, getUint24LE, } from '../../functions.js';
+
+const speedPresent               = (flags) => ((flags >>  0) & 1) === 0;
+const avgSpeedPresent            = (flags) => ((flags >>  1) & 1) === 1;
+const cadencePresent             = (flags) => ((flags >>  2) & 1) === 1;
+const avgCadencePresent          = (flags) => ((flags >>  3) & 1) === 1;
+const distancePresent            = (flags) => ((flags >>  4) & 1) === 1;
+const resistancePresent          = (flags) => ((flags >>  5) & 1) === 1;
+const powerPresent               = (flags) => ((flags >>  6) & 1) === 1;
+const avgPowerPresent            = (flags) => ((flags >>  7) & 1) === 1;
+const expandedEnergyPresent      = (flags) => ((flags >>  8) & 1) === 1;
+const heartRatePresent           = (flags) => ((flags >>  9) & 1) === 1;
+const metabolicEquivalentPresent = (flags) => ((flags >> 10) & 1) === 1;
+const elapsedTimePresent         = (flags) => ((flags >> 11) & 1) === 1;
+const remainingTimePresent       = (flags) => ((flags >> 12) & 1) === 1;
 
 const fields = {
-    flags: { size: 2 },
-    speed: { size: 2, resolution: 0.01, present: (f) => !((f & 1) === 1) }, // Note: Flag 0=More Data? No, bit 0 is Instantaneous Speed present? Actually spec says 0=More Data usually, but here: Bit 0: 0=More Data(No), 1=Speed Present? 
-    // Let's copy standard logic: 
-    // Bit 0: 0=More Data False? 
-    // Actually looking at original file: speedPresent = (flags >> 0) & 1 === 0. So 0 means present.
-    // Instantaneous Speed: Resolution 0.01
-
-    // Simplification: I'll trust the original logic order.
-    // field size resolution presentCheck
+    Flags:                 {resolution: 1,    unit: 'bit',      size: 2, type: 'Uint16', present: (_ => true),                                   },
+    InstantaneousSpeed:    {resolution: 0.01, unit: 'kph',      size: 2, type: 'Uint16', present: speedPresent,               short: 'speed',    },
+    AverageSpeed:          {resolution: 0.01, unit: 'kph',      size: 2, type: 'Uint16', present: avgSpeedPresent,                               },
+    InstantaneousCadence:  {resolution: 0.5,  unit: 'rpm',      size: 2, type: 'Uint16', present: cadencePresent,             short: 'cadence',  },
+    AverageCadence:        {resolution: 0.5,  unit: 'rpm',      size: 2, type: 'Uint16', present: avgCadencePresent,                             },
+    TotalDistance:         {resolution: 1,    unit: 'm',        size: 3, type: 'Uint24', present: distancePresent,            short: 'distance'  },
+    ResistanceLevel:       {resolution: 1,    unit: 'unitless', size: 2, type: 'Uint16', present: resistancePresent,                             },
+    InstantaneousPower:    {resolution: 1,    unit: 'W',        size: 2, type: 'Uint16', present: powerPresent,               short: 'power',    },
+    AveragePower:          {resolution: 1,    unit: 'W',        size: 2, type: 'Uint16', present: avgPowerPresent,                               },
+    TotalEnergy:           {resolution: 1,    unit: 'kcal',     size: 2, type: 'Int16',  present: expandedEnergyPresent,                         },
+    EnergyPerHour:         {resolution: 1,    unit: 'kcal',     size: 2, type: 'Int16',  present: expandedEnergyPresent,                         },
+    EnergyPerMinute:       {resolution: 1,    unit: 'kcal',     size: 1, type: 'Uint8',  present: expandedEnergyPresent,                         },
+    HeartRate:             {resolution: 1,    unit: 'bpm',      size: 1, type: 'Uint8',  present: heartRatePresent,           short: 'heartRate',},
+    MetabolicEquivalent:   {resolution: 1,    unit: 'me',       size: 1, type: 'Uint8',  present: metabolicEquivalentPresent,                    },
+    ElapsedTime:           {resolution: 1,    unit: 's',        size: 2, type: 'Uint16', present: elapsedTimePresent,                            },
+    RemainingTime:         {resolution: 1,    unit: 's',        size: 2, type: 'Uint16', present: remainingTimePresent,                          },
 };
 
-export const indoorBikeData = {
-    decode: (dataview) => {
-        let i = 0;
-        const flags = dataview.getUint16(i, true);
-        i += 2;
+const order = [
+    'Flags',
+    'InstantaneousSpeed',
+    'AverageSpeed',
+    'InstantaneousCadence',
+    'AverageCadence',
+    'TotalDistance',
+    'ResistanceLevel',
+    'InstantaneousPower',
+    'AveragePower',
+    'TotalEnergy',
+    'EnergyPerHour',
+    'EnergyPerMinute',
+    'HeartRate',
+    'MetabolicEquivalent',
+    'ElapsedTime',
+    'RemainingTime',
+];
 
-        const data = {};
+function IndoorBikeData(args = {}) {
+    const architecture = true;
 
-        // Speed (Bit 0 == 0)
-        if ((flags & 1) === 0) {
-            data.speed = dataview.getUint16(i, true) * 0.01;
-            i += 2;
+    function getField(field, dataview, i) {
+        if(equals(field.type, 'Uint24')) {
+            return getUint24LE(dataview, i) * field.resolution;
         }
-
-        // Avg Speed (Bit 1)
-        if ((flags >> 1) & 1) i += 2;
-
-        // Cadence (Bit 2)
-        if ((flags >> 2) & 1) {
-            data.cadence = dataview.getUint16(i, true) * 0.5;
-            i += 2;
-        }
-
-        // Avg Cadence (Bit 3)
-        if ((flags >> 3) & 1) i += 2;
-
-        // Distance (Bit 4) (Uint24)
-        if ((flags >> 4) & 1) {
-            const dist = dataview.getUint8(i) | (dataview.getUint8(i + 1) << 8) | (dataview.getUint8(i + 2) << 16);
-            data.distance = dist;
-            i += 3;
-        }
-
-        // Resistance (Bit 5)
-        if ((flags >> 5) & 1) i += 2;
-
-        // Power (Bit 6)
-        if ((flags >> 6) & 1) {
-            data.power = dataview.getInt16(i, true);
-            i += 2;
-        }
-
-        // HEART RATE (Bit 9)
-        // Skip Exp Energy (Bit 8)
-        if ((flags >> 8) & 1) {
-            // Energy Total (2) + Per Hour (2) + Per Min (1) = 5 bytes
-            i += 5;
-        }
-
-        if ((flags >> 9) & 1) {
-            data.heartRate = dataview.getUint8(i);
-            i += 1;
-        }
-
-        return data;
+        return dataview[`get${field.type}`](i, architecture) * field.resolution;
     }
+
+    // Dataview -> {'<field-name>': {value: Number, unit: String}}
+    function decode(dataview) {
+        const byteLength = dataview.byteLength;
+
+        return order.reduce(function(acc, fieldName) {
+            const field = fields[fieldName];
+
+            if((acc.i + field.size) > byteLength) return acc;
+
+            if(field.present(acc.flags)) {
+                const value = getField(field, dataview, acc.i);
+                const unit  = field?.unit ?? '';
+                const name  = field?.short ?? fieldName;
+
+                if(acc.i === 0) {
+                    acc.flags = value;
+                } else {
+                    // acc.data[name] = {value, unit,};
+                    acc.data[name] = value;
+                }
+                acc.i += field.size;
+            };
+
+            return acc;
+        }, {i: 0, flags: 0, data: {}}).data;
+    }
+
+    return Object.freeze({
+        getField,
+        decode,
+    });
+}
+
+const indoorBikeData = IndoorBikeData();
+
+export {
+    IndoorBikeData,
+    indoorBikeData,
 };
+

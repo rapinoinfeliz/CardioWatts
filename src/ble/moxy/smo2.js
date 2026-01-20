@@ -1,14 +1,14 @@
 //
-// Heart Rate Service
+// SmO2 Service
 //
 
 import { expect, } from '../../functions.js';
 import { uuids, } from '../web-ble.js';
 import { Service } from '../service.js';
 import { Characteristic } from '../characteristic.js';
-import { heartRateMeasurement as heartRateMeasurementParser } from './heart-rate-measurement.js';
+import { sensorData as smo2MeasurementParser } from './moxy.js';
 
-function HRS(args = {}) {
+function SMO2(args = {}) {
 
     // config
     const onData = args.onData;
@@ -19,15 +19,15 @@ function HRS(args = {}) {
     //     isPrimary: Bool,
     // }
     const gattService = expect(
-        args.service, 'HRS needs BluetoothRemoteGATTService!'
+        args.service, 'SMO2 needs BluetoothRemoteGATTService!'
     );
     // end config
 
     // service
     const spec = {
         measurement: {
-            uuid: uuids.heartRateMeasurement,
-            notify: {callback: onData, parser: heartRateMeasurementParser},
+            uuid: uuids.smo2SensorData,
+            notify: {callback: onData, parser: smo2MeasurementParser},
         },
     };
 
@@ -35,8 +35,8 @@ function HRS(args = {}) {
     // end service
 
     return Object.freeze({
-        ...service, // HRS will have all the public methods and properties of Service
+        ...service, // SMO2 will have all the public methods and properties of Service
     });
 }
 
-export default HRS;
+export default SMO2;
