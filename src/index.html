@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CardioWatts</title>
     <link rel="icon" type="image/png" href="./assets/logo.png">
     <link rel="apple-touch-icon" href="./assets/logo.png">
@@ -25,6 +26,12 @@
 
             --success: #00E676;
             --danger: #FF1744;
+
+            /* Safe Area Variables */
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
         }
 
         body {
@@ -199,10 +206,6 @@
             box-shadow: 0 0 15px rgba(50, 138, 255, 0.4);
         }
 
-        button.connect-btn.connected:hover {
-            /* Handled by brightness filter */
-        }
-
         /* FAILED STATE */
         button.connect-btn.failed {
             background: var(--danger) !important;
@@ -248,6 +251,7 @@
             /* Matches buttons */
             font-weight: 600;
             outline: none;
+            appearance: textfield;
             -moz-appearance: textfield;
         }
 
@@ -297,91 +301,191 @@
         }
     </style>
     <style>
-        /* Mobile Optimization */
+        /* Mobile Optimization - Premium Native Feel */
         @media (max-width: 600px) {
-            .container {
-                width: 95%;
-                gap: 16px;
-                min-height: 90vh;
-                /* Allow more vertical space */
+            body {
+                height: 100dvh;
+                /* Dynamic Viewport Height */
+                width: 100vw;
+                overflow: hidden;
+                background: #000;
+                /* Darker background for OLED */
             }
 
+            .container {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                height: 100dvh;
+                max-width: none;
+                gap: 0;
+                padding: 0;
+                padding-top: var(--safe-top);
+                padding-bottom: var(--safe-bottom);
+                box-sizing: border-box;
+            }
+
+            /* 1. Header: Compact & Fixed Top */
             .header {
-                padding: 16px;
+                flex: 0 0 auto;
+                padding: 10px 20px;
+                background: transparent;
+                /* Cleaner look */
+                border: none;
+                box-shadow: none;
+                backdrop-filter: none;
+                z-index: 10;
             }
 
             .timer-display {
-                font-size: 2.5rem;
+                font-size: 2rem;
+                font-weight: 700;
+                opacity: 0.9;
             }
 
-            /* Compact HR Card */
+            /* Config Button */
+            #pipBtn {
+                width: 40px !important;
+                height: 40px !important;
+                background: rgba(255, 255, 255, 0.1) !important;
+                border: none !important;
+                top: 50% !important;
+                transform: translateY(-50%);
+            }
+
+            /* Logo */
+            .header img {
+                width: 36px !important;
+                height: 36px !important;
+                top: 50% !important;
+                transform: translateY(-50%);
+            }
+
+            /* 2. Main HR Card: Hero Section */
             .hr-card {
-                padding: 24px 16px;
+                flex: 1;
+                /* Take all available space */
+                width: 100%;
+                margin: 0;
+                border-radius: 0;
+                /* Full width look */
+                border: none;
+                background: transparent;
+                /* Removing card bg for cleaner look */
+                box-shadow: none;
+                backdrop-filter: none;
+                justify-content: space-evenly;
+                padding: 10px 0;
             }
 
+            /* HR Value - Massive & Centered */
             .hr-value {
-                font-size: 6rem;
-                /* Reduced from 10rem */
+                font-size: 22vh;
+                /* Responsive to height */
+                font-weight: 800;
+                line-height: 0.8;
+                text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             }
 
             .hr-label {
                 font-size: 1rem;
+                letter-spacing: 4px;
+                opacity: 0.6;
+                margin-top: 10px;
             }
 
-            /* Metric adjustments */
+            /* Metrics Row - Floating above chart/controls */
+            .hr-card>div:last-child {
+                width: 90%;
+                gap: 20px;
+                background: rgba(255, 255, 255, 0.05);
+                padding: 15px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
             #powerValue,
             #cadenceValue {
-                font-size: 1.4rem !important;
+                font-size: 1.8rem !important;
+                font-weight: 700;
+            }
+
+            /* Target Controls - Thumb Friendly */
+            button#targetDec,
+            button#targetInc {
+                width: 56px !important;
+                height: 56px !important;
+                background: rgba(255, 255, 255, 0.15) !important;
+                font-size: 1.5rem !important;
+                border-radius: 16px !important;
+                /* Squircle */
             }
 
             #targetHrDisplay {
-                font-size: 1.5rem !important;
-                width: 50px !important;
+                font-size: 2.2rem !important;
+                width: 60px !important;
             }
 
-            button#targetDec,
-            button#targetInc {
-                width: 36px !important;
-                height: 36px !important;
-                min-width: 36px !important;
-                font-size: 1.2rem !important;
-            }
-
-            /* Chart */
+            /* 3. Chart: Subtle Background Context */
             #chartContainer {
-                height: 200px !important;
-                /* Slightly shorter on mobile */
+                height: 120px !important;
+                width: 100%;
+                flex: 0 0 auto;
+                background: transparent;
+                border: none;
+                mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+                opacity: 0.6;
+                margin-bottom: -20px;
+                /* Overlap slightly */
+                pointer-events: none;
+                /* Let touches pass through if needed */
             }
 
-            /* Controls */
+            /* 4. Controls: Bottom Sheet Style */
             .controls {
-                flex-wrap: wrap;
-                /* Allow wrapping */
-                gap: 8px;
-                margin-bottom: 24px;
+                flex: 0 0 auto;
+                width: 100%;
+                padding: 16px 20px;
+                box-sizing: border-box;
+                background: rgba(10, 10, 10, 0.8);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 24px 24px 0 0;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                margin: 0;
             }
 
             button.connect-btn {
-                flex: 1 1 40%;
-                /* Grow to fill space, 2 per row approx */
-                min-width: auto;
-                padding: 12px;
-                font-size: 0.8rem;
+                width: 100%;
+                padding: 16px;
+                font-size: 0.9rem;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
             }
 
             #algoSelector {
-                flex: 1 1 100%;
-                /* Full width for selector */
-                order: 3;
-                /* Move below buttons if needed or keep flow */
-                margin-top: 4px;
+                grid-column: 1 / -1;
+                background: #111;
+                padding: 16px;
+                border: 1px solid #333;
+                border-radius: 12px;
+                color: #ddd;
+                font-size: 1rem;
+                appearance: none;
+                -webkit-appearance: none;
+                /* Safely hide arrow on iOS */
             }
 
             button#startBtn {
-                flex: 1 1 100%;
-                /* Full width start button */
-                padding: 16px;
-                order: 4;
+                grid-column: 1 / -1;
+                width: 100%;
+                padding: 18px;
+                font-size: 1.2rem;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(252, 103, 25, 0.4);
             }
         }
     </style>
